@@ -184,6 +184,13 @@
         <div class="project-tech"><span class="tech-tag">HTML5 Canvas</span><span class="tech-tag">JavaScript</span><span class="tech-tag">Python</span><span class="tech-tag">Pygame</span></div>
         <div class="project-links"><a href="https://github.com/Tech-demand" target="_blank" class="project-link"><i class="fab fa-github"></i> View Code →</a></div>
       </div>
+      <div class="project-card reveal" style="transition-delay:0.45s">
+        <span class="project-badge">Frontend / Design</span>
+        <h3 class="project-title">✨ This Portfolio</h3>
+        <p class="project-desc">Fully animated dark-theme portfolio with particle canvas, mouse-reactive cursor, typewriter effect, orbit animations, live LeetCode stats, and scroll-reveal. Pure HTML/CSS/JS.</p>
+        <div class="project-tech"><span class="tech-tag">HTML5</span><span class="tech-tag">CSS3</span><span class="tech-tag">JavaScript</span><span class="tech-tag">Canvas API</span><span class="tech-tag">Vercel</span></div>
+        <div class="project-links"><a href="https://github.com/Tech-demand" target="_blank" class="project-link"><i class="fab fa-github"></i> Source →</a></div>
+      </div>
     </div>
   </div>
 </section>
@@ -201,14 +208,19 @@
     <!-- Loading State -->
     <div id="lc-loading" class="lc-loading">
       <div class="lc-spinner"></div>
-      <p>Fetching LeetCode stats...</p>
+      <p id="lc-loading-msg">Connecting to LeetCode API...</p>
+      <p style="font-size:0.72rem;color:var(--text-muted);margin-top:4px">Free servers may take 10-30s to wake up ☕</p>
     </div>
 
     <!-- Error State -->
     <div id="lc-error" class="lc-error" style="display:none">
       <div class="lc-error-icon">⚠️</div>
-      <p>Could not load live stats right now.</p>
-      <a href="https://leetcode.com/u/rahulsharma274702/" target="_blank" class="btn-outline" style="margin-top:16px;display:inline-block">View on LeetCode →</a>
+      <p style="margin-bottom:8px">Could not load live stats.</p>
+      <p style="font-size:0.82rem;color:var(--text-muted)">All APIs are down or sleeping. Try again in a moment.</p>
+      <div style="display:flex;gap:12px;justify-content:center;margin-top:20px;flex-wrap:wrap">
+        <button id="lc-retry-btn" class="btn-primary" style="font-size:0.85rem;padding:10px 24px">🔄 Retry</button>
+        <a href="https://leetcode.com/u/rahulsharma274702/" target="_blank" class="btn-outline" style="font-size:0.85rem;padding:10px 24px">View on LeetCode →</a>
+      </div>
     </div>
 
     <!-- Stats Content -->
