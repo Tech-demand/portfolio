@@ -6,8 +6,7 @@ const follower = document.getElementById('cursor-follower');
 let mouseX = 0, mouseY = 0, fX = 0, fY = 0;
 document.addEventListener('mousemove', e => {
   mouseX = e.clientX; mouseY = e.clientY;
-  cursor.style.left = mouseX + 'px';
-  cursor.style.top  = mouseY + 'px';
+  cursor.style.left = mouseX + 'px'; cursor.style.top = mouseY + 'px';
 });
 function animFollower() {
   fX += (mouseX - fX) * 0.12; fY += (mouseY - fY) * 0.12;
@@ -87,8 +86,8 @@ window.addEventListener('scroll',()=>{
 const menuBtn=document.getElementById('menuBtn');
 const menuClose=document.getElementById('menuClose');
 const mobileMenu=document.getElementById('mobileMenu');
-if(menuBtn) menuBtn.addEventListener('click',()=>mobileMenu.classList.add('open'));
-if(menuClose) menuClose.addEventListener('click',()=>mobileMenu.classList.remove('open'));
+if(menuBtn)    menuBtn.addEventListener('click',()=>mobileMenu.classList.add('open'));
+if(menuClose)  menuClose.addEventListener('click',()=>mobileMenu.classList.remove('open'));
 document.querySelectorAll('.mob-link').forEach(a=>a.addEventListener('click',()=>mobileMenu.classList.remove('open')));
 
 // ---- 3D TILT ----
@@ -124,141 +123,155 @@ function animateCount(el, target, duration=1400){
   function step(ts){
     if(!start)start=ts;
     const p=Math.min((ts-start)/duration,1);
-    const ease=1-Math.pow(1-p,3); // ease out cubic
+    const ease=1-Math.pow(1-p,3);
     el.textContent=Math.floor(ease*target);
-    if(p<1)requestAnimationFrame(step);
-    else el.textContent=target;
+    if(p<1)requestAnimationFrame(step); else el.textContent=target;
   }
   requestAnimationFrame(step);
 }
 
-// ===== LEETCODE STATS =====
+// ===================================================
+// ====== LEETCODE — LeetCode Official GraphQL =======
+// ===================================================
 const LC_USER = 'rahulsharma274702';
 
-// All 4 possible APIs to try in order
-const LC_APIS = [
-  {
-    name: 'alfa-solved',
-    urls: [
-      `https://alfa-leetcode-api.onrender.com/${LC_USER}/solved`,
-      `https://alfa-leetcode-api.onrender.com/userProfile/${LC_USER}`
-    ],
-    parse: async (responses) => {
-      const solved  = await responses[0].json();
-      const profile = await responses[1].json();
-      if(!solved.solvedProblem && solved.solvedProblem !== 0) throw new Error('bad data');
-      return {
-        totalSolved:   solved.solvedProblem  || 0,
-        easySolved:    solved.easySolved     || 0,
-        mediumSolved:  solved.mediumSolved   || 0,
-        hardSolved:    solved.hardSolved     || 0,
-        totalEasy:     solved.totalEasy      || 873,
-        totalMedium:   solved.totalMedium    || 1831,
-        totalHard:     solved.totalHard      || 812,
-        totalQ:        (solved.totalEasy||873)+(solved.totalMedium||1831)+(solved.totalHard||812),
-        ranking:       profile.ranking       || null,
-        acceptanceRate: null,
-        submissionCalendar: profile.submissionCalendar || {}
-      };
-    }
-  },
-  {
-    name: 'leetcode-stats-herokuapp',
-    urls: [`https://leetcode-stats-api.herokuapp.com/${LC_USER}`],
-    parse: async (responses) => {
-      const d = await responses[0].json();
-      if(d.status === 'error') throw new Error('user not found');
-      return {
-        totalSolved:   d.totalSolved   || 0,
-        easySolved:    d.easySolved    || 0,
-        mediumSolved:  d.mediumSolved  || 0,
-        hardSolved:    d.hardSolved    || 0,
-        totalEasy:     d.totalEasy     || 873,
-        totalMedium:   d.totalMedium   || 1831,
-        totalHard:     d.totalHard     || 812,
-        totalQ:        d.totalQuestions|| 3516,
-        ranking:       d.ranking       || null,
-        acceptanceRate: d.acceptanceRate || null,
-        submissionCalendar: d.submissionCalendar || {}
-      };
-    }
-  },
-  {
-    name: 'leetcode-stats-onrender',
-    urls: [`https://leetcode-stats-api.onrender.com/${LC_USER}`],
-    parse: async (responses) => {
-      const d = await responses[0].json();
-      if(d.status === 'error') throw new Error('user not found');
-      return {
-        totalSolved:   d.totalSolved   || 0,
-        easySolved:    d.easySolved    || 0,
-        mediumSolved:  d.mediumSolved  || 0,
-        hardSolved:    d.hardSolved    || 0,
-        totalEasy:     d.totalEasy     || 873,
-        totalMedium:   d.totalMedium   || 1831,
-        totalHard:     d.totalHard     || 812,
-        totalQ:        d.totalQuestions|| 3516,
-        ranking:       d.ranking       || null,
-        acceptanceRate: d.acceptanceRate || null,
-        submissionCalendar: d.submissionCalendar || {}
-      };
-    }
-  }
+// LeetCode ka official GraphQL endpoint use kar rahe hain
+// CORS proxy ke through — ye reliably kaam karta hai
+const CORS_PROXIES = [
+  'https://corsproxy.io/?',
+  'https://api.allorigins.win/raw?url=',
 ];
 
-async function tryOneAPI(api) {
-  const controller = new AbortController();
-  const timeout    = setTimeout(()=>controller.abort(), 10000); // 10s timeout each
-  try {
-    const responses = await Promise.all(
-      api.urls.map(url => fetch(url, { signal: controller.signal }))
-    );
-    clearTimeout(timeout);
-    if(responses.some(r=>!r.ok)) throw new Error('non-ok response');
-    return await api.parse(responses);
-  } catch(e) {
-    clearTimeout(timeout);
-    throw e;
+const LC_GRAPHQL = 'https://leetcode.com/graphql';
+
+// Query 1: Solved stats
+const QUERY_STATS = `
+  query getUserStats($username: String!) {
+    matchedUser(username: $username) {
+      submitStats {
+        acSubmissionNum {
+          difficulty
+          count
+        }
+      }
+      profile {
+        ranking
+      }
+    }
+    allQuestionsCount {
+      difficulty
+      count
+    }
   }
+`;
+
+// Query 2: Submission calendar (heatmap)
+const QUERY_CALENDAR = `
+  query getUserCalendar($username: String!) {
+    matchedUser(username: $username) {
+      userCalendar {
+        submissionCalendar
+      }
+    }
+  }
+`;
+
+async function fetchWithProxy(proxyUrl, body) {
+  const targetUrl = LC_GRAPHQL;
+  const fullUrl   = proxyUrl + encodeURIComponent(targetUrl);
+
+  const res = await fetch(fullUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(12000)
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const json = await res.json();
+  if (json.errors) throw new Error('GraphQL error');
+  return json;
+}
+
+async function tryAllProxies(body) {
+  for (const proxy of CORS_PROXIES) {
+    try {
+      console.log(`[LC] Trying proxy: ${proxy}`);
+      const data = await fetchWithProxy(proxy, body);
+      console.log(`[LC] ✅ Success with proxy: ${proxy}`);
+      return data;
+    } catch(e) {
+      console.warn(`[LC] ❌ Proxy failed: ${proxy}`, e.message);
+    }
+  }
+  throw new Error('All proxies failed');
 }
 
 async function fetchLCStats() {
-  // Try each API one by one
-  for(const api of LC_APIS) {
-    try {
-      console.log(`[LC] Trying ${api.name}...`);
-      const data = await tryOneAPI(api);
-      console.log(`[LC] ✅ Got data from ${api.name}`, data);
-      return data;
-    } catch(e) {
-      console.warn(`[LC] ❌ ${api.name} failed:`, e.message);
-    }
-  }
-  return null; // all failed
-}
+  try {
+    // Fetch stats + calendar in parallel, both through proxies
+    const [statsData, calData] = await Promise.all([
+      tryAllProxies({
+        query: QUERY_STATS,
+        variables: { username: LC_USER }
+      }),
+      tryAllProxies({
+        query: QUERY_CALENDAR,
+        variables: { username: LC_USER }
+      })
+    ]);
 
-// Update loading message with attempt count
-function updateLoadingMsg(attempt, total) {
-  const el = document.getElementById('lc-loading-msg');
-  if(el) el.textContent = attempt < total
-    ? `Trying API ${attempt}/${total}... (free servers wake up slowly)`
-    : 'Last attempt...';
+    const user    = statsData.data.matchedUser;
+    const allQ    = statsData.data.allQuestionsCount;
+    const acSubs  = user.submitStats.acSubmissionNum;
+
+    // Parse solved counts
+    const getCount = (diff) => (acSubs.find(s=>s.difficulty===diff)||{count:0}).count;
+    const getTotal = (diff) => (allQ.find(q=>q.difficulty===diff)||{count:0}).count;
+
+    const totalSolved  = getCount('All');
+    const easySolved   = getCount('Easy');
+    const mediumSolved = getCount('Medium');
+    const hardSolved   = getCount('Hard');
+    const totalEasy    = getTotal('Easy');
+    const totalMedium  = getTotal('Medium');
+    const totalHard    = getTotal('Hard');
+    const totalQ       = getTotal('All');
+
+    // Parse calendar
+    let submissionCalendar = {};
+    try {
+      const calStr = calData.data.matchedUser.userCalendar.submissionCalendar;
+      submissionCalendar = JSON.parse(calStr);
+    } catch(e) { submissionCalendar = {}; }
+
+    return {
+      totalSolved, easySolved, mediumSolved, hardSolved,
+      totalEasy, totalMedium, totalHard, totalQ,
+      ranking: user.profile.ranking || null,
+      acceptanceRate: totalQ > 0 ? ((totalSolved / totalQ) * 100).toFixed(1) : null,
+      submissionCalendar
+    };
+  } catch(e) {
+    console.error('[LC] GraphQL fetch failed:', e.message);
+    return null;
+  }
 }
 
 function buildHeatmap(calendar) {
   const heatmap = document.getElementById('lc-heatmap');
-  if(!heatmap) return;
+  if (!heatmap) return;
   heatmap.innerHTML = '';
   const now   = Math.floor(Date.now()/1000);
   const start = now - 26*7*24*3600;
   const values = Object.values(calendar).map(Number).filter(v=>v>0);
   const maxVal = values.length ? Math.max(...values) : 1;
+
   for(let w=0;w<26;w++){
     const weekDiv=document.createElement('div');
     weekDiv.className='heat-week';
     for(let d=0;d<7;d++){
       const ts=start+(w*7+d)*24*3600;
-      if(ts>now)break;
+      if(ts>now) break;
       const count=calendar[String(ts)]||0;
       const level=count===0?0:Math.min(5,Math.ceil((count/maxVal)*5));
       const cell=document.createElement('div');
@@ -275,51 +288,53 @@ function renderLCStats(data) {
   document.getElementById('lc-error').style.display='none';
   document.getElementById('lc-content').style.display='block';
 
-  // Inject SVG gradient
+  // SVG gradient
   const svg=document.querySelector('.lc-donut');
   if(svg && !svg.querySelector('defs')){
     const defs=document.createElementNS('http://www.w3.org/2000/svg','defs');
-    defs.innerHTML=`<linearGradient id="donutGrad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" style="stop-color:#00e5ff"/><stop offset="100%" style="stop-color:#a855f7"/></linearGradient>`;
+    defs.innerHTML=`<linearGradient id="donutGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#00e5ff"/>
+      <stop offset="100%" style="stop-color:#a855f7"/>
+    </linearGradient>`;
     svg.insertBefore(defs,svg.firstChild);
   }
 
-  // Donut
-  const circumference=2*Math.PI*80;
-  const pct=Math.min(data.totalSolved/data.totalQ, 1);
-  const track=document.getElementById('donut-track');
+  // Donut ring
+  const circumference = 2*Math.PI*80;
+  const pct = Math.min(data.totalSolved / (data.totalQ||3516), 1);
+  const track = document.getElementById('donut-track');
   setTimeout(()=>{
     if(track) track.style.strokeDasharray=`${pct*circumference} ${circumference}`;
-    const totalEl=document.getElementById('lc-total');
-    if(totalEl) animateCount(totalEl, data.totalSolved);
-  },400);
+    const el=document.getElementById('lc-total');
+    if(el) animateCount(el, data.totalSolved);
+  }, 400);
 
   // Ranking & acceptance
   const rankEl=document.getElementById('lc-ranking');
-  const accEl=document.getElementById('lc-acceptance');
+  const accEl =document.getElementById('lc-acceptance');
   if(rankEl) rankEl.textContent = data.ranking ? '#'+Number(data.ranking).toLocaleString() : 'N/A';
-  if(accEl)  accEl.textContent  = data.acceptanceRate ? data.acceptanceRate.toFixed(1)+'%' : 'N/A';
+  if(accEl)  accEl.textContent  = data.acceptanceRate ? data.acceptanceRate+'%' : 'N/A';
 
   // Difficulty bars
   setTimeout(()=>{
-    const sets=[
+    [
       {id:'easy',   solved:data.easySolved,   total:data.totalEasy},
       {id:'medium', solved:data.mediumSolved, total:data.totalMedium},
       {id:'hard',   solved:data.hardSolved,   total:data.totalHard},
-    ];
-    sets.forEach(({id,solved,total})=>{
-      const solvedEl=document.getElementById(`lc-${id}`);
-      const totalEl =document.getElementById(`lc-${id}-total`);
-      const barEl   =document.getElementById(`lc-${id}-bar`);
-      if(solvedEl) animateCount(solvedEl, solved);
-      if(totalEl)  totalEl.textContent='/ '+total;
-      if(barEl)    barEl.style.width=(solved/total*100).toFixed(1)+'%';
+    ].forEach(({id,solved,total})=>{
+      const s=document.getElementById(`lc-${id}`);
+      const t=document.getElementById(`lc-${id}-total`);
+      const b=document.getElementById(`lc-${id}-bar`);
+      if(s) animateCount(s, solved);
+      if(t) t.textContent='/ '+total;
+      if(b) b.style.width=(total>0?(solved/total*100).toFixed(1):0)+'%';
     });
-  },500);
+  }, 500);
 
   // Heatmap
   buildHeatmap(data.submissionCalendar||{});
 
-  // Trigger reveals
+  // Trigger reveals inside lc-content
   document.querySelectorAll('#lc-content .reveal').forEach(el=>revealObs.observe(el));
 }
 
@@ -335,9 +350,8 @@ function resetLCUI() {
   document.getElementById('lc-content').style.display='none';
 }
 
-// Retry button
 const retryBtn=document.getElementById('lc-retry-btn');
-if(retryBtn) retryBtn.addEventListener('click',initLC);
+if(retryBtn) retryBtn.addEventListener('click', initLC);
 
 async function initLC() {
   resetLCUI();
@@ -346,7 +360,6 @@ async function initLC() {
   else     showLCError();
 }
 
-// Start fetching
 initLC();
 
 console.log('%c🚀 Rahul Sharma Portfolio','color:#00e5ff;font-size:20px;font-weight:bold;');
